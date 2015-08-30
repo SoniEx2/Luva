@@ -1,0 +1,23 @@
+lua $1 > /dev/null
+echo "lua OK"
+luajit -joff $1 > /dev/null
+echo "luajit -joff OK"
+
+for i in {1..50}
+do
+  echo -Ohotloop=$i
+  luajit -Ohotloop=$i -jdump=+rsx,test.dump $1 > /dev/null
+  if [ $? -ne 0 ]
+  then
+    echo "Error on "  luajit -Ohotloop=$i -jdump=+rsx,test.dump $1 "> /dev/null"
+    mv test.dump error.dump
+    for o in "" "1" "2" "3" "-fold" "-cse" "-dce" "-narrow" "-loop" "-fwd" "-dse" "-abc" "-fuse"
+    do
+      echo -O$o -Ohotloop=$i
+      luajit -O$o -Ohotloop=$i -jdump=+rsx,test.dump $1 > /dev/null
+    done
+    break
+  fi
+done 
+
+rm test.dump
